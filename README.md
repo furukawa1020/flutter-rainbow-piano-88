@@ -1,16 +1,102 @@
-# piano_app
+# 🎹 BigFlutterPiano
 
-A new Flutter project.
+## ようこそ！スマホで弾ける謎の健康管理機能付きピアノへ！
 
-## Getting Started
+部屋にグランドピアノは置けない？家賃が高い？ご安心ください！  
+このアプリなら、スマホがカラフルなピアノに早変わり。  
+指一本でドレミファソラシド、音楽の世界へジャンプ！  
+そして、なぜかFitbitの心拍ゾーンデータも付いてくる謎仕様。  
+（ピアノ演奏でどれだけ心拍数が上がるかチェックできます！）
 
-This project is a starting point for a Flutter application.
+---
 
-A few resources to get you started if this is your first Flutter project:
+## 📁 ファイル詳細解説
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+### 🎵 lib/main.dart
+**役割**: Flutter製のピアノアプリ本体  
+**内容詳細**: 
+- `PianoApp`と`PianoScreen`の2つのクラスで構成
+- 7色の美しい鍵盤（赤、橙、黄、緑、青、藍、紫）が縦に並ぶUI
+- タップすると各音階（C, D, E, F, G, A, B）の音が鳴る仕組み
+- `audioplayers`パッケージでWAVファイルを再生
+- 各鍵盤は80の高さで、タップ感抜群の設計
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+### 🎶 assets/sounds/
+**役割**: ピアノの音源ファイル置き場  
+**内容詳細**:
+- C.wav, D.wav, E.wav, F.wav, G.wav, A.wav, B.wav の7つの音源
+- 各鍵盤に対応したリアルなピアノサウンドを収録
+- WAV形式で高音質を実現
+- タップと同時に対応する音階が鳴る魔法のファイル群
+
+### ⚙️ pubspec.yaml
+**役割**: プロジェクトの設定とパッケージ管理  
+**内容詳細**:
+- プロジェクト名: `piano_app`
+- Flutter SDKバージョン: 3.0.0以上対応
+- 依存パッケージ: `audioplayers ^5.0.0`（音声再生用）
+- アセット登録: `assets/sounds/`ディレクトリをアプリに組み込み
+- プライベートパッケージ設定（pub.devに誤爆しない安全設計）
+
+### 🔧 android/gradle.properties
+**役割**: Androidビルドの設定ファイル  
+**内容詳細**:
+- JVMメモリ設定: 8GB（メモリリッチな設定）
+- AndroidX使用: true（現代的なAndroid開発に対応）
+- Jetifier有効化: true（レガシーライブラリも安心）
+- **魔法の一行**: `android.overridePathCheck=true`（日本語パスでもビルド可能）
+
+### 🛠️ android/app/build.gradle.kts
+**役割**: Androidアプリのビルド設定  
+**内容詳細**:
+- NDKバージョン: 27.0.12077973（最新audioplayersプラグインに対応）
+- Kotlin DSL使用（モダンなGradleスクリプト）
+- 後方互換性を保ちつつ最新機能に対応
+
+### 💓 time_in_heart_rate_zones-2025-05-12.json
+**役割**: 謎の心拍ゾーンデータ（Fitbit由来）  
+**内容詳細**:
+- 日時: 2025年5月12日 00:00:00
+- BELOW_DEFAULT_ZONE_1: 973分（安静時心拍ゾーン）
+- IN_DEFAULT_ZONE_1: 76分（軽い運動ゾーン）
+- IN_DEFAULT_ZONE_2: 0分（中程度運動ゾーン）
+- IN_DEFAULT_ZONE_3: 0分（激しい運動ゾーン）
+- **解釈**: この日はほぼ一日中リラックスしていた模様（ピアノ演奏は心を落ち着かせる？）
+
+---
+
+## 📝 三行コミット文
+
+```
+feat: カラフルな7色鍵盤でドレミファソラシドを実装
+chore: 音源ファイルとアセット設定でリアルピアノサウンド追加
+docs: Fitbit心拍ゾーンデータで健康志向ピアニストに配慮（？）
+```
+
+---
+
+## 🚀 使い方
+
+1. **アプリを起動** - BigFlutterPianoのアイコンをタップ
+2. **好きな色の鍵盤をタップ** - 7色から選び放題
+3. **音楽を楽しむ** - ドレミファソラシドで名曲を奏でよう
+4. **心拍数をチェック** - 激しい演奏で心拍数が上がったかFitbitで確認（？）
+
+---
+
+## ⚠️ 免責事項
+
+- このアプリでピアノが上手くなる保証はありません
+- 心拍ゾーンデータはピアノ演奏中の興奮度を測るものではありません
+- ご近所迷惑にならないよう、音量にはご注意ください
+- 健康管理機能は付いていません（データファイルがあるだけです）
+
+---
+
+## 📄 ライセンス
+
+MITライセンス（ご自由にお使いください！音楽に国境はありません🎵）
+
+---
+
+**推奨リポジトリ名**:
