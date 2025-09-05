@@ -31,7 +31,10 @@ class PianoScreen extends StatefulWidget {
 }
 
 class _PianoScreenState extends State<PianoScreen> {
-  final AudioPlayer _audioPlayer = AudioPlayer();
+  // 和音のために複数のAudioPlayerを使用
+  final List<AudioPlayer> _audioPlayers = [];
+  final int _maxPolyphony = 10; // 最大同時発音数
+  int _currentPlayerIndex = 0;
 
   // 88鍵ピアノの鍵盤データ
   final List<Map<String, dynamic>> _keys = [];
@@ -40,6 +43,13 @@ class _PianoScreenState extends State<PianoScreen> {
   void initState() {
     super.initState();
     _generatePianoKeys();
+    _initializeAudioPlayers();
+  }
+
+  void _initializeAudioPlayers() {
+    for (int i = 0; i < _maxPolyphony; i++) {
+      _audioPlayers.add(AudioPlayer());
+    }
   }
 
   void _generatePianoKeys() {
@@ -136,27 +146,6 @@ class _PianoScreenState extends State<PianoScreen> {
     }
   }
 
-  // 音声データを生成する関数
-  Uint8List _generateWaveform(double frequency, double duration) {
-    final int sampleRate = 44100;
-    final int samples = (sampleRate * duration).round();
-    final List<int> data = [];
-
-    for (int i = 0; i < samples; i++) {
-      double time = i / sampleRate;
-      double amplitude = sin(2 * pi * frequency * time) * 0.3; // 音量を30%に
-      int sample = (amplitude * 32767).round();
-
-      // 16ビットステレオ（Left/Right同じ値）
-      data.add(sample & 0xFF); // Low byte
-      data.add((sample >> 8) & 0xFF); // High byte
-      data.add(sample & 0xFF); // Low byte (Right)
-      data.add((sample >> 8) & 0xFF); // High byte (Right)
-    }
-
-    return Uint8List.fromList(data);
-  }
-
   void _playNote(String note) async {
     try {
       // 該当する鍵盤データを検索
@@ -167,16 +156,29 @@ class _PianoScreenState extends State<PianoScreen> {
 
       double frequency = keyData['frequency'];
 
+      // 次に使用するAudioPlayerを選択（ローテーション）
+      AudioPlayer currentPlayer = _audioPlayers[_currentPlayerIndex];
+      _currentPlayerIndex = (_currentPlayerIndex + 1) % _maxPolyphony;
+
       // 簡単な正弦波データを生成
       final int sampleRate = 8000;
-      final double duration = 0.5;
+      final double duration = 1.0; // 音を少し長くして和音効果を高める
       final int samples = (sampleRate * duration).round();
       final List<int> data = [];
 
       for (int i = 0; i < samples; i++) {
         double time = i / sampleRate;
-        double amplitude = sin(2 * pi * frequency * time) * 0.5;
-        int sample = (amplitude * 127 + 128).round();
+        // より豊かな音色のために複数の周波数を重ね合わせ
+        double amplitude = 
+            sin(2 * pi * frequency * time) * 0.4 +
+            sin(2 * pi * frequency * 2 * time) * 0.2 +
+            sin(2 * pi * frequency * 3 * time) * 0.1;
+        
+        // フェードアウト効果
+        double fadeOut = 1.0 - (time / duration);
+        amplitude *= fadeOut;
+        
+        int sample = (amplitude * 127 + 128).round().clamp(0, 255);
         data.add(sample);
       }
 
@@ -214,15 +216,15 @@ class _PianoScreenState extends State<PianoScreen> {
 
       // 一時ファイルに保存してから再生
       final tempDir = await getTemporaryDirectory();
-      final tempFile = File('${tempDir.path}/temp_note_$note.wav');
+      final tempFile = File('${tempDir.path}/temp_note_${note}_${DateTime.now().millisecondsSinceEpoch}.wav');
       await tempFile.writeAsBytes(wavFile);
 
-      await _audioPlayer.play(DeviceFileSource(tempFile.path));
+      await currentPlayer.play(DeviceFileSource(tempFile.path));
 
-      print('音を再生しました: $note ($frequency Hz)');
+      print('和音対応音を再生しました: $note ($frequency Hz) - Player $_currentPlayerIndex');
     } catch (e) {
       print('音の再生でエラーが発生: $e');
-      if (await Vibration.hasVibrator() ?? false) {
+      if (await Vibration.hasVibrator() == true) {
         Vibration.vibrate(duration: 100);
       }
     }
@@ -230,7 +232,9 @@ class _PianoScreenState extends State<PianoScreen> {
 
   @override
   void dispose() {
-    _audioPlayer.dispose();
+    for (final player in _audioPlayers) {
+      player.dispose();
+    }
     super.dispose();
   }
 
@@ -238,7 +242,7 @@ class _PianoScreenState extends State<PianoScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Big Piano - 88鍵フルサイズ'),
+        title: const Text('Big Piano - 88鍵フルサイズ（和音対応）'),
         backgroundColor: Colors.deepPurple,
       ),
       body: Column(
@@ -246,7 +250,7 @@ class _PianoScreenState extends State<PianoScreen> {
           const Padding(
             padding: EdgeInsets.all(8.0),
             child: Text(
-              '🎹 88鍵ピアノ - タップして演奏しよう！',
+              '🎹 88鍵ピアノ（和音対応）- 複数の鍵盤を同時にタップして和音を演奏しよう！',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ),
@@ -257,10 +261,11 @@ class _PianoScreenState extends State<PianoScreen> {
                 children: [
                   // 白鍵のレイヤー
                   Row(
-                    children: _keys
-                        .where((key) => !key['isBlack'])
-                        .map((key) => _buildWhiteKey(key))
-                        .toList(),
+                    children:
+                        _keys
+                            .where((key) => !key['isBlack'])
+                            .map((key) => _buildWhiteKey(key))
+                            .toList(),
                   ),
                   // 黒鍵のレイヤー（白鍵の上に配置）
                   Positioned.fill(child: Row(children: _buildBlackKeys())),
@@ -274,7 +279,7 @@ class _PianoScreenState extends State<PianoScreen> {
             color: Colors.grey[800],
             child: const Center(
               child: Text(
-                'A0 (27.5Hz) から C8 (4186Hz) まで88鍵',
+                'A0 (27.5Hz) から C8 (4186Hz) まで88鍵 - 最大10音同時発音可能',
                 style: TextStyle(color: Colors.white, fontSize: 12),
               ),
             ),
