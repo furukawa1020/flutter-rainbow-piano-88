@@ -148,12 +148,11 @@ class PianoScreen extends StatefulWidget {
 
 class _PianoScreenState extends State<PianoScreen>
     with TickerProviderStateMixin {
-  // 🚀 パフォーマンス最適化: 25個のAudioPlayerプール
-  final List<AudioPlayer> _audioPlayerPool = [];
-  int _currentPlayerIndex = 0;
-
-  // 事前生成された音声ファイルパスのキャッシュ
-  final Map<String, String> _audioCache = {};
+  // 🚀 究極最適化: 各鍵盤に専用AudioPlayer（88個）
+  final List<AudioPlayer> _audioPlayers = [];
+  
+  // 事前生成された音声ファイルパス
+  final Map<String, String> _audioFileCache = {};
   bool _isAudioCacheReady = false;
 
   // 88鍵ピアノの鍵盤データ
@@ -176,16 +175,18 @@ class _PianoScreenState extends State<PianoScreen>
   @override
   void initState() {
     super.initState();
-    _initializeAudioPlayerPool();
     _generatePianoKeys();
+    _initializeAudioPlayers();
     _initializeGlowControllers();
     _preGenerateAllAudioFiles();
   }
 
-  void _initializeAudioPlayerPool() {
-    // 25個の同時再生可能なプレイヤーを作成
-    for (int i = 0; i < 25; i++) {
-      _audioPlayerPool.add(AudioPlayer());
+  void _initializeAudioPlayers() {
+    // 88個の専用プレイヤー（各鍵盤に1つ）
+    for (int i = 0; i < 88; i++) {
+      final player = AudioPlayer();
+      player.setReleaseMode(ReleaseMode.stop); // 低遅延モード
+      _audioPlayers.add(player);
     }
   }
 
@@ -199,40 +200,81 @@ class _PianoScreenState extends State<PianoScreen>
     }
   }
 
-  // 🎵 全鍵盤の音声を事前生成（起動時に1回だけ）
+  // 🎵 全鍵盤の音声を事前生成
   Future<void> _preGenerateAllAudioFiles() async {
     try {
       final tempDir = await getTemporaryDirectory();
 
-      for (var keyData in _keys) {
+      for (var i = 0; i < _keys.length; i++) {
+        final keyData = _keys[i];
         final note = keyData['note'];
         final frequency = keyData['frequency'];
 
-        // 高品質な音声データを生成
-        final wavFile = _generateHighQualityWaveform(frequency, 0.5);
-
+        // 最適化された音声データ生成
+        final wavFile = _generateOptimizedWaveform(frequency, 0.8);
+        
         // ファイルに保存
         final filePath = '${tempDir.path}/piano_$note.wav';
         final file = File(filePath);
         await file.writeAsBytes(wavFile);
 
-        // キャッシュに保存
-        _audioCache[note] = filePath;
+        _audioFileCache[note] = filePath;
       }
 
       setState(() {
         _isAudioCacheReady = true;
       });
 
-      print('✅ 全88鍵の音声ファイルを事前生成完了！');
+      print('✅ 全88鍵の音声ファイル生成完了！');
     } catch (e) {
-      print('⚠️ 音声ファイル生成エラー: $e');
+      print('⚠️ 音声生成エラー: $e');
     }
   }
 
-  // 高品質な波形生成（倍音含む）
-  Uint8List _generateHighQualityWaveform(double frequency, double duration) {
-    final int sampleRate = 44100; // CD品質
+  // 最適化された波形生成
+  Uint8List _generateOptimizedWaveform(double frequency, double duration) {
+    final int sampleRate = 44100;
+    final int samples = (sampleRate * duration).round();
+    final List<int> data = [];
+
+    for (int i = 0; i < samples; i++) {
+      double time = i / sampleRate;
+
+      // ピアノらしい音色（倍音合成）
+      double amplitude = 
+        sin(2 * pi * frequency * time) * 0.6 +
+        sin(2 * pi * frequency * 2 * time) * 0.25 +
+        sin(2 * pi * frequency * 3 * time) * 0.15 +
+        sin(2 * pi * frequency * 4 * time) * 0.08;
+
+      // 自然な減衰
+      double envelope = exp(-time * 1.5);
+      amplitude *= envelope;
+
+      int sample = (amplitude * 127 + 128).round().clamp(0, 255);
+      data.add(sample);
+    }
+
+    // WAVヘッダー
+    final int dataSize = data.length;
+    final int fileSize = 44 + dataSize;
+
+    final List<int> header = [
+      0x52, 0x49, 0x46, 0x46,
+      fileSize & 0xFF, (fileSize >> 8) & 0xFF, (fileSize >> 16) & 0xFF, (fileSize >> 24) & 0xFF,
+      0x57, 0x41, 0x56, 0x45,
+      0x66, 0x6D, 0x74, 0x20,
+      16, 0, 0, 0, 1, 0, 1, 0,
+      0x44, 0xAC, 0, 0, 0x44, 0xAC, 0, 0,
+      1, 0, 8, 0,
+      0x64, 0x61, 0x74, 0x61,
+      dataSize & 0xFF, (dataSize >> 8) & 0xFF, (dataSize >> 16) & 0xFF, (dataSize >> 24) & 0xFF,
+    ];
+
+    return Uint8List.fromList([...header, ...data]);
+  }
+
+  void _generatePianoKeys() {
     final int samples = (sampleRate * duration).round();
     final List<int> data = [];
 
