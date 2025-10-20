@@ -786,7 +786,7 @@ class _PianoScreenState extends State<PianoScreen>
           if (_isGameMode && _isPlaying) {
             _onKeyPressedInGame(keyIndex);
           } else {
-            _playNote(keyData['note']);
+            _playNote(keyData['note'], keyIndex);
           }
         },
         child: AnimatedBuilder(
@@ -902,7 +902,7 @@ class _PianoScreenState extends State<PianoScreen>
           if (_isGameMode && _isPlaying) {
             _onKeyPressedInGame(keyIndex);
           } else {
-            _playNote(keyData['note']);
+            _playNote(keyData['note'], keyIndex);
           }
         },
         child: AnimatedBuilder(
