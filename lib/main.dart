@@ -309,50 +309,6 @@ class _PianoScreenState extends State<PianoScreen>
   }
 
   void _generatePianoKeys() {
-    final int samples = (sampleRate * duration).round();
-    final List<int> data = [];
-
-    for (int i = 0; i < samples; i++) {
-      double time = i / sampleRate;
-
-      // 基音 + 倍音で豊かな音色
-      double amplitude = sin(2 * pi * frequency * time) * 0.5 + // 基音
-          sin(2 * pi * frequency * 2 * time) * 0.2 + // 2倍音
-          sin(2 * pi * frequency * 3 * time) * 0.1 + // 3倍音
-          sin(2 * pi * frequency * 4 * time) * 0.05; // 4倍音
-
-      // エンベロープ（フェードアウト）
-      double envelope = exp(-time * 2);
-      amplitude *= envelope;
-
-      int sample = (amplitude * 127 + 128).round().clamp(0, 255);
-      data.add(sample);
-    }
-
-    // WAVヘッダー生成
-    final int dataSize = data.length;
-    final int fileSize = 44 + dataSize;
-
-    final List<int> header = [
-      0x52, 0x49, 0x46, 0x46, // "RIFF"
-      fileSize & 0xFF, (fileSize >> 8) & 0xFF, (fileSize >> 16) & 0xFF,
-      (fileSize >> 24) & 0xFF,
-      0x57, 0x41, 0x56, 0x45, // "WAVE"
-      0x66, 0x6D, 0x74, 0x20, // "fmt "
-      16, 0, 0, 0,
-      1, 0, 1, 0,
-      0x44, 0xAC, 0, 0, // 44100 Hz
-      0x44, 0xAC, 0, 0,
-      1, 0, 8, 0,
-      0x64, 0x61, 0x74, 0x61, // "data"
-      dataSize & 0xFF, (dataSize >> 8) & 0xFF, (dataSize >> 16) & 0xFF,
-      (dataSize >> 24) & 0xFF,
-    ];
-
-    return Uint8List.fromList([...header, ...data]);
-  }
-
-  void _generatePianoKeys() {
     // A0から C8まで88鍵
     final List<String> noteNames = [
       'C',
@@ -446,24 +402,23 @@ class _PianoScreenState extends State<PianoScreen>
     }
   }
 
-  // 🚀 超高速音声再生（事前生成ファイルを使用）
-  void _playNote(String note) async {
-    if (!_isAudioCacheReady || !_audioCache.containsKey(note)) {
+  // 🚀 超高速音声再生（88個の専用プレイヤーを使用）
+  void _playNote(String note, int keyIndex) async {
+    if (!_isAudioCacheReady || !_audioFileCache.containsKey(note)) {
       // キャッシュ準備中の場合は簡易再生
       Vibration.vibrate(duration: 30);
       return;
     }
 
     try {
-      // プールから次のプレイヤーを取得（ラウンドロビン方式）
-      final player = _audioPlayerPool[_currentPlayerIndex];
-      _currentPlayerIndex = (_currentPlayerIndex + 1) % _audioPlayerPool.length;
+      // 各キー専用のプレイヤーを使用（同時押し対応）
+      final player = _audioPlayers[keyIndex];
 
       // 既存の再生を停止（高速切り替え）
       await player.stop();
 
-      // キャッシュされたファイルを即座に再生
-      await player.play(DeviceFileSource(_audioCache[note]!));
+      // キャッシュされたファイルを即座に再生（ReleaseMode.stopで低遅延）
+      await player.play(DeviceFileSource(_audioFileCache[note]!));
 
       // 触覚フィードバック
       Vibration.vibrate(duration: 20);
@@ -606,13 +561,13 @@ class _PianoScreenState extends State<PianoScreen>
         }
       });
 
-      _playNote(_keys[keyIndex]['note']);
+      _playNote(_keys[keyIndex]['note'], keyIndex);
       Vibration.vibrate(duration: 50);
     } else {
       setState(() {
         _combo = 0;
       });
-      _playNote(_keys[keyIndex]['note']);
+      _playNote(_keys[keyIndex]['note'], keyIndex);
     }
   }
 
@@ -685,8 +640,8 @@ class _PianoScreenState extends State<PianoScreen>
   @override
   void dispose() {
     _gameTimer?.cancel();
-    // 全てのAudioPlayerを破棄
-    for (var player in _audioPlayerPool) {
+    // 88個の専用AudioPlayerを全て破棄
+    for (var player in _audioPlayers) {
       player.dispose();
     }
     for (var controller in _glowControllers.values) {
