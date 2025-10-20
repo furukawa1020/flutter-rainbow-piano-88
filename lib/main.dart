@@ -56,7 +56,7 @@ class SongData {
       {'time': 2.0, 'key': baseKey + 9, 'note': 'A'},
       {'time': 2.5, 'key': baseKey + 9, 'note': 'A'},
       {'time': 3.0, 'key': baseKey + 7, 'note': 'G'},
-      
+
       // おそらのほしよ
       {'time': 4.0, 'key': baseKey + 5, 'note': 'F'},
       {'time': 4.5, 'key': baseKey + 5, 'note': 'F'},
@@ -76,18 +76,19 @@ class PianoScreen extends StatefulWidget {
   State<PianoScreen> createState() => _PianoScreenState();
 }
 
-class _PianoScreenState extends State<PianoScreen> with TickerProviderStateMixin {
+class _PianoScreenState extends State<PianoScreen>
+    with TickerProviderStateMixin {
   // 🚀 パフォーマンス最適化: 25個のAudioPlayerプール
   final List<AudioPlayer> _audioPlayerPool = [];
   int _currentPlayerIndex = 0;
-  
+
   // 事前生成された音声ファイルパスのキャッシュ
   final Map<String, String> _audioCache = {};
   bool _isAudioCacheReady = false;
 
   // 88鍵ピアノの鍵盤データ
   final List<Map<String, dynamic>> _keys = [];
-  
+
   // ゲームモード関連
   bool _isGameMode = false;
   final List<Sushi> _sushiList = [];
@@ -97,7 +98,7 @@ class _PianoScreenState extends State<PianoScreen> with TickerProviderStateMixin
   Timer? _gameTimer;
   double _gameTime = 0.0;
   bool _isPlaying = false;
-  
+
   // 光るエフェクト用
   final Map<int, AnimationController> _glowControllers = {};
   final Map<int, bool> _isKeyGlowing = {};
@@ -110,14 +111,14 @@ class _PianoScreenState extends State<PianoScreen> with TickerProviderStateMixin
     _initializeGlowControllers();
     _preGenerateAllAudioFiles();
   }
-  
+
   void _initializeAudioPlayerPool() {
     // 25個の同時再生可能なプレイヤーを作成
     for (int i = 0; i < 25; i++) {
       _audioPlayerPool.add(AudioPlayer());
     }
   }
-  
+
   void _initializeGlowControllers() {
     for (int i = 0; i < 88; i++) {
       _glowControllers[i] = AnimationController(
@@ -127,38 +128,38 @@ class _PianoScreenState extends State<PianoScreen> with TickerProviderStateMixin
       _isKeyGlowing[i] = false;
     }
   }
-  
+
   // 🎵 全鍵盤の音声を事前生成（起動時に1回だけ）
   Future<void> _preGenerateAllAudioFiles() async {
     try {
       final tempDir = await getTemporaryDirectory();
-      
+
       for (var keyData in _keys) {
         final note = keyData['note'];
         final frequency = keyData['frequency'];
-        
+
         // 高品質な音声データを生成
         final wavFile = _generateHighQualityWaveform(frequency, 0.5);
-        
+
         // ファイルに保存
         final filePath = '${tempDir.path}/piano_$note.wav';
         final file = File(filePath);
         await file.writeAsBytes(wavFile);
-        
+
         // キャッシュに保存
         _audioCache[note] = filePath;
       }
-      
+
       setState(() {
         _isAudioCacheReady = true;
       });
-      
+
       print('✅ 全88鍵の音声ファイルを事前生成完了！');
     } catch (e) {
       print('⚠️ 音声ファイル生成エラー: $e');
     }
   }
-  
+
   // 高品質な波形生成（倍音含む）
   Uint8List _generateHighQualityWaveform(double frequency, double duration) {
     final int sampleRate = 44100; // CD品質
@@ -167,18 +168,17 @@ class _PianoScreenState extends State<PianoScreen> with TickerProviderStateMixin
 
     for (int i = 0; i < samples; i++) {
       double time = i / sampleRate;
-      
+
       // 基音 + 倍音で豊かな音色
-      double amplitude = 
-        sin(2 * pi * frequency * time) * 0.5 +           // 基音
-        sin(2 * pi * frequency * 2 * time) * 0.2 +       // 2倍音
-        sin(2 * pi * frequency * 3 * time) * 0.1 +       // 3倍音
-        sin(2 * pi * frequency * 4 * time) * 0.05;       // 4倍音
-      
+      double amplitude = sin(2 * pi * frequency * time) * 0.5 + // 基音
+          sin(2 * pi * frequency * 2 * time) * 0.2 + // 2倍音
+          sin(2 * pi * frequency * 3 * time) * 0.1 + // 3倍音
+          sin(2 * pi * frequency * 4 * time) * 0.05; // 4倍音
+
       // エンベロープ（フェードアウト）
       double envelope = exp(-time * 2);
       amplitude *= envelope;
-      
+
       int sample = (amplitude * 127 + 128).round().clamp(0, 255);
       data.add(sample);
     }
@@ -189,7 +189,8 @@ class _PianoScreenState extends State<PianoScreen> with TickerProviderStateMixin
 
     final List<int> header = [
       0x52, 0x49, 0x46, 0x46, // "RIFF"
-      fileSize & 0xFF, (fileSize >> 8) & 0xFF, (fileSize >> 16) & 0xFF, (fileSize >> 24) & 0xFF,
+      fileSize & 0xFF, (fileSize >> 8) & 0xFF, (fileSize >> 16) & 0xFF,
+      (fileSize >> 24) & 0xFF,
       0x57, 0x41, 0x56, 0x45, // "WAVE"
       0x66, 0x6D, 0x74, 0x20, // "fmt "
       16, 0, 0, 0,
@@ -198,7 +199,8 @@ class _PianoScreenState extends State<PianoScreen> with TickerProviderStateMixin
       0x44, 0xAC, 0, 0,
       1, 0, 8, 0,
       0x64, 0x61, 0x74, 0x61, // "data"
-      dataSize & 0xFF, (dataSize >> 8) & 0xFF, (dataSize >> 16) & 0xFF, (dataSize >> 24) & 0xFF,
+      dataSize & 0xFF, (dataSize >> 8) & 0xFF, (dataSize >> 16) & 0xFF,
+      (dataSize >> 24) & 0xFF,
     ];
 
     return Uint8List.fromList([...header, ...data]);
@@ -305,25 +307,25 @@ class _PianoScreenState extends State<PianoScreen> with TickerProviderStateMixin
       Vibration.vibrate(duration: 30);
       return;
     }
-    
+
     try {
       // プールから次のプレイヤーを取得（ラウンドロビン方式）
       final player = _audioPlayerPool[_currentPlayerIndex];
       _currentPlayerIndex = (_currentPlayerIndex + 1) % _audioPlayerPool.length;
-      
+
       // 既存の再生を停止（高速切り替え）
       await player.stop();
-      
+
       // キャッシュされたファイルを即座に再生
       await player.play(DeviceFileSource(_audioCache[note]!));
-      
+
       // 触覚フィードバック
       Vibration.vibrate(duration: 20);
     } catch (e) {
       print('⚠️ 音声再生エラー: $e');
     }
   }
-  
+
   // ゲームモード関連メソッド
   void _toggleGameMode() {
     setState(() {
@@ -335,7 +337,7 @@ class _PianoScreenState extends State<PianoScreen> with TickerProviderStateMixin
       }
     });
   }
-  
+
   void _startGame() {
     setState(() {
       _isPlaying = true;
@@ -352,7 +354,7 @@ class _PianoScreenState extends State<PianoScreen> with TickerProviderStateMixin
       if (!mounted) return;
       setState(() {
         _gameTime += 0.05;
-        
+
         for (var sushi in _sushiList) {
           sushi.position += 0.008;
         }
@@ -371,7 +373,7 @@ class _PianoScreenState extends State<PianoScreen> with TickerProviderStateMixin
       });
     });
   }
-  
+
   void _stopGame() {
     _gameTimer?.cancel();
     setState(() {
@@ -394,7 +396,7 @@ class _PianoScreenState extends State<PianoScreen> with TickerProviderStateMixin
 
         int price = [100, 150, 200][random.nextInt(3)];
         Color plateColor;
-        
+
         if (price == 100) {
           plateColor = Colors.grey[300]!;
         } else if (price == 150) {
@@ -424,7 +426,7 @@ class _PianoScreenState extends State<PianoScreen> with TickerProviderStateMixin
       _isKeyGlowing[keyIndex] = true;
     });
     _glowControllers[keyIndex]?.forward(from: 0.0);
-    
+
     Timer(const Duration(seconds: 1), () {
       if (!mounted) return;
       setState(() {
@@ -435,11 +437,11 @@ class _PianoScreenState extends State<PianoScreen> with TickerProviderStateMixin
 
   void _onKeyPressedInGame(int keyIndex) {
     final targetSushi = _sushiList.firstWhere(
-      (sushi) => 
-        sushi.keyIndex == keyIndex && 
-        !sushi.isHit && 
-        sushi.position > 0.7 && 
-        sushi.position < 0.95,
+      (sushi) =>
+          sushi.keyIndex == keyIndex &&
+          !sushi.isHit &&
+          sushi.position > 0.7 &&
+          sushi.position < 0.95,
       orElse: () => Sushi(
         emoji: '',
         price: 0,
@@ -537,7 +539,10 @@ class _PianoScreenState extends State<PianoScreen> with TickerProviderStateMixin
   @override
   void dispose() {
     _gameTimer?.cancel();
-    _audioPlayer.dispose();
+    // 全てのAudioPlayerを破棄
+    for (var player in _audioPlayerPool) {
+      player.dispose();
+    }
     for (var controller in _glowControllers.values) {
       controller.dispose();
     }
@@ -576,7 +581,7 @@ class _PianoScreenState extends State<PianoScreen> with TickerProviderStateMixin
                   children: [
                     // 寿司レーン
                     ..._sushiList.map((sushi) => _buildSushi(sushi)).toList(),
-                    
+
                     // 判定ライン
                     Positioned(
                       bottom: 20,
@@ -587,7 +592,7 @@ class _PianoScreenState extends State<PianoScreen> with TickerProviderStateMixin
                         color: Colors.red.withOpacity(0.7),
                       ),
                     ),
-                    
+
                     // スコア表示
                     Positioned(
                       top: 20,
@@ -630,7 +635,8 @@ class _PianoScreenState extends State<PianoScreen> with TickerProviderStateMixin
               padding: const EdgeInsets.all(8.0),
               child: Text(
                 '🎹 88鍵ピアノ - タップして演奏しよう！',
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ),
           ],
@@ -672,7 +678,7 @@ class _PianoScreenState extends State<PianoScreen> with TickerProviderStateMixin
   Widget _buildWhiteKey(Map<String, dynamic> keyData) {
     final keyIndex = _keys.indexOf(keyData);
     final isGlowing = _isKeyGlowing[keyIndex] ?? false;
-    
+
     return Expanded(
       child: GestureDetector(
         onTapDown: (_) {
@@ -683,7 +689,8 @@ class _PianoScreenState extends State<PianoScreen> with TickerProviderStateMixin
           }
         },
         child: AnimatedBuilder(
-          animation: _glowControllers[keyIndex] ?? AnimationController(vsync: this, duration: Duration.zero),
+          animation: _glowControllers[keyIndex] ??
+              AnimationController(vsync: this, duration: Duration.zero),
           builder: (context, child) {
             return Container(
               margin: const EdgeInsets.all(1),
@@ -694,19 +701,21 @@ class _PianoScreenState extends State<PianoScreen> with TickerProviderStateMixin
                   width: isGlowing ? 4 : 1,
                 ),
                 borderRadius: BorderRadius.circular(4),
-                boxShadow: isGlowing ? [
-                  BoxShadow(
-                    color: Colors.yellow.withOpacity(0.8),
-                    blurRadius: 20,
-                    spreadRadius: 5,
-                  ),
-                ] : [
-                  const BoxShadow(
-                    color: Colors.black26,
-                    blurRadius: 2,
-                    offset: Offset(0, 2),
-                  ),
-                ],
+                boxShadow: isGlowing
+                    ? [
+                        BoxShadow(
+                          color: Colors.yellow.withOpacity(0.8),
+                          blurRadius: 20,
+                          spreadRadius: 5,
+                        ),
+                      ]
+                    : [
+                        const BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 2,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -721,13 +730,15 @@ class _PianoScreenState extends State<PianoScreen> with TickerProviderStateMixin
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
                             color: isGlowing ? Colors.white : Colors.black87,
-                            shadows: isGlowing ? [
-                              const Shadow(
-                                color: Colors.black,
-                                offset: Offset(1, 1),
-                                blurRadius: 2,
-                              ),
-                            ] : null,
+                            shadows: isGlowing
+                                ? [
+                                    const Shadow(
+                                      color: Colors.black,
+                                      offset: Offset(1, 1),
+                                      blurRadius: 2,
+                                    ),
+                                  ]
+                                : null,
                           ),
                         ),
                         Text(
@@ -794,11 +805,13 @@ class _PianoScreenState extends State<PianoScreen> with TickerProviderStateMixin
           }
         },
         child: AnimatedBuilder(
-          animation: _glowControllers[keyIndex] ?? AnimationController(vsync: this, duration: Duration.zero),
+          animation: _glowControllers[keyIndex] ??
+              AnimationController(vsync: this, duration: Duration.zero),
           builder: (context, child) {
             return Container(
               width: keyWidth * 0.6,
-              height: MediaQuery.of(context).size.height * (_isGameMode ? 0.42 : 0.6),
+              height: MediaQuery.of(context).size.height *
+                  (_isGameMode ? 0.42 : 0.6),
               margin: const EdgeInsets.all(1),
               decoration: BoxDecoration(
                 color: keyData['color'],
@@ -807,19 +820,21 @@ class _PianoScreenState extends State<PianoScreen> with TickerProviderStateMixin
                   width: isGlowing ? 3 : 1,
                 ),
                 borderRadius: BorderRadius.circular(4),
-                boxShadow: isGlowing ? [
-                  BoxShadow(
-                    color: Colors.yellow.withOpacity(0.8),
-                    blurRadius: 15,
-                    spreadRadius: 3,
-                  ),
-                ] : [
-                  const BoxShadow(
-                    color: Colors.black54,
-                    blurRadius: 4,
-                    offset: Offset(0, 2),
-                  ),
-                ],
+                boxShadow: isGlowing
+                    ? [
+                        BoxShadow(
+                          color: Colors.yellow.withOpacity(0.8),
+                          blurRadius: 15,
+                          spreadRadius: 3,
+                        ),
+                      ]
+                    : [
+                        const BoxShadow(
+                          color: Colors.black54,
+                          blurRadius: 4,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -854,13 +869,13 @@ class _PianoScreenState extends State<PianoScreen> with TickerProviderStateMixin
       ),
     );
   }
-  
+
   // 寿司を描画するウィジェット
   Widget _buildSushi(Sushi sushi) {
     final screenHeight = MediaQuery.of(context).size.height * 0.3;
     final whiteKeyCount = _keys.where((key) => !key['isBlack']).length;
     final keyWidth = MediaQuery.of(context).size.width / whiteKeyCount;
-    
+
     int whiteKeyIndex = 0;
     for (int i = 0; i < sushi.keyIndex && i < _keys.length; i++) {
       if (!_keys[i]['isBlack']) {
