@@ -150,7 +150,7 @@ class _PianoScreenState extends State<PianoScreen>
     with TickerProviderStateMixin {
   // 🚀 究極最適化: 各鍵盤に専用AudioPlayer（88個）
   final List<AudioPlayer> _audioPlayers = [];
-  
+
   // 事前生成された音声ファイルパス
   final Map<String, String> _audioFileCache = {};
   bool _isAudioCacheReady = false;
@@ -212,7 +212,7 @@ class _PianoScreenState extends State<PianoScreen>
 
         // 最適化された音声データ生成
         final wavFile = _generateOptimizedWaveform(frequency, 0.8);
-        
+
         // ファイルに保存
         final filePath = '${tempDir.path}/piano_$note.wav';
         final file = File(filePath);
@@ -241,11 +241,10 @@ class _PianoScreenState extends State<PianoScreen>
       double time = i / sampleRate;
 
       // ピアノらしい音色（倍音合成）
-      double amplitude = 
-        sin(2 * pi * frequency * time) * 0.6 +
-        sin(2 * pi * frequency * 2 * time) * 0.25 +
-        sin(2 * pi * frequency * 3 * time) * 0.15 +
-        sin(2 * pi * frequency * 4 * time) * 0.08;
+      double amplitude = sin(2 * pi * frequency * time) * 0.6 +
+          sin(2 * pi * frequency * 2 * time) * 0.25 +
+          sin(2 * pi * frequency * 3 * time) * 0.15 +
+          sin(2 * pi * frequency * 4 * time) * 0.08;
 
       // 自然な減衰
       double envelope = exp(-time * 1.5);
@@ -260,15 +259,50 @@ class _PianoScreenState extends State<PianoScreen>
     final int fileSize = 44 + dataSize;
 
     final List<int> header = [
-      0x52, 0x49, 0x46, 0x46,
-      fileSize & 0xFF, (fileSize >> 8) & 0xFF, (fileSize >> 16) & 0xFF, (fileSize >> 24) & 0xFF,
-      0x57, 0x41, 0x56, 0x45,
-      0x66, 0x6D, 0x74, 0x20,
-      16, 0, 0, 0, 1, 0, 1, 0,
-      0x44, 0xAC, 0, 0, 0x44, 0xAC, 0, 0,
-      1, 0, 8, 0,
-      0x64, 0x61, 0x74, 0x61,
-      dataSize & 0xFF, (dataSize >> 8) & 0xFF, (dataSize >> 16) & 0xFF, (dataSize >> 24) & 0xFF,
+      0x52,
+      0x49,
+      0x46,
+      0x46,
+      fileSize & 0xFF,
+      (fileSize >> 8) & 0xFF,
+      (fileSize >> 16) & 0xFF,
+      (fileSize >> 24) & 0xFF,
+      0x57,
+      0x41,
+      0x56,
+      0x45,
+      0x66,
+      0x6D,
+      0x74,
+      0x20,
+      16,
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      0,
+      0x44,
+      0xAC,
+      0,
+      0,
+      0x44,
+      0xAC,
+      0,
+      0,
+      1,
+      0,
+      8,
+      0,
+      0x64,
+      0x61,
+      0x74,
+      0x61,
+      dataSize & 0xFF,
+      (dataSize >> 8) & 0xFF,
+      (dataSize >> 16) & 0xFF,
+      (dataSize >> 24) & 0xFF,
     ];
 
     return Uint8List.fromList([...header, ...data]);
