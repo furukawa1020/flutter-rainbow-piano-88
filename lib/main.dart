@@ -43,8 +43,9 @@ class Sushi {
   });
 }
 
-// 簡単な曲データ（童謡「きらきら星」）
+// 簡単な曲データ（複数の曲を収録）
 class SongData {
+  // きらきら星
   static List<Map<String, dynamic>> getKirakiraBoshi() {
     const int baseKey = 39; // C4を基準
     return [
@@ -65,6 +66,81 @@ class SongData {
       {'time': 6.0, 'key': baseKey + 2, 'note': 'D'},
       {'time': 6.5, 'key': baseKey + 2, 'note': 'D'},
       {'time': 7.0, 'key': baseKey, 'note': 'C'},
+    ];
+  }
+  
+  // ちょうちょう
+  static List<Map<String, dynamic>> getChoucho() {
+    const int baseKey = 39; // C4
+    return [
+      {'time': 0.0, 'key': baseKey + 4, 'note': 'E'},
+      {'time': 0.5, 'key': baseKey + 2, 'note': 'D'},
+      {'time': 1.0, 'key': baseKey, 'note': 'C'},
+      {'time': 1.5, 'key': baseKey + 2, 'note': 'D'},
+      {'time': 2.0, 'key': baseKey + 4, 'note': 'E'},
+      {'time': 2.5, 'key': baseKey + 4, 'note': 'E'},
+      {'time': 3.0, 'key': baseKey + 4, 'note': 'E'},
+      
+      {'time': 4.0, 'key': baseKey + 2, 'note': 'D'},
+      {'time': 4.5, 'key': baseKey + 2, 'note': 'D'},
+      {'time': 5.0, 'key': baseKey + 2, 'note': 'D'},
+      {'time': 6.0, 'key': baseKey + 4, 'note': 'E'},
+      {'time': 6.5, 'key': baseKey + 5, 'note': 'F'},
+      {'time': 7.0, 'key': baseKey + 4, 'note': 'E'},
+    ];
+  }
+  
+  // かえるのうた
+  static List<Map<String, dynamic>> getKaeruNoUta() {
+    const int baseKey = 39; // C4
+    return [
+      {'time': 0.0, 'key': baseKey, 'note': 'C'},
+      {'time': 0.5, 'key': baseKey + 2, 'note': 'D'},
+      {'time': 1.0, 'key': baseKey + 4, 'note': 'E'},
+      {'time': 1.5, 'key': baseKey + 5, 'note': 'F'},
+      
+      {'time': 2.0, 'key': baseKey + 4, 'note': 'E'},
+      {'time': 2.5, 'key': baseKey + 2, 'note': 'D'},
+      {'time': 3.0, 'key': baseKey, 'note': 'C'},
+      
+      {'time': 4.0, 'key': baseKey + 4, 'note': 'E'},
+      {'time': 4.5, 'key': baseKey + 5, 'note': 'F'},
+      {'time': 5.0, 'key': baseKey + 4, 'note': 'E'},
+      {'time': 5.5, 'key': baseKey + 2, 'note': 'D'},
+      
+      {'time': 6.0, 'key': baseKey, 'note': 'C'},
+    ];
+  }
+  
+  // メリーさんの羊
+  static List<Map<String, dynamic>> getMaryHadALittleLamb() {
+    const int baseKey = 39; // C4
+    return [
+      {'time': 0.0, 'key': baseKey + 4, 'note': 'E'},
+      {'time': 0.5, 'key': baseKey + 2, 'note': 'D'},
+      {'time': 1.0, 'key': baseKey, 'note': 'C'},
+      {'time': 1.5, 'key': baseKey + 2, 'note': 'D'},
+      {'time': 2.0, 'key': baseKey + 4, 'note': 'E'},
+      {'time': 2.5, 'key': baseKey + 4, 'note': 'E'},
+      {'time': 3.0, 'key': baseKey + 4, 'note': 'E'},
+      
+      {'time': 4.0, 'key': baseKey + 2, 'note': 'D'},
+      {'time': 4.5, 'key': baseKey + 2, 'note': 'D'},
+      {'time': 5.0, 'key': baseKey + 2, 'note': 'D'},
+      
+      {'time': 6.0, 'key': baseKey + 4, 'note': 'E'},
+      {'time': 6.5, 'key': baseKey + 7, 'note': 'G'},
+      {'time': 7.0, 'key': baseKey + 7, 'note': 'G'},
+    ];
+  }
+  
+  // 全曲リスト
+  static List<Map<String, dynamic>> getAllSongs() {
+    return [
+      {'name': '⭐ きらきら星', 'data': getKirakiraBoshi(), 'duration': 8.0},
+      {'name': '🦋 ちょうちょう', 'data': getChoucho(), 'duration': 8.0},
+      {'name': '🐸 かえるのうた', 'data': getKaeruNoUta(), 'duration': 7.0},
+      {'name': '🐑 メリーさんの羊', 'data': getMaryHadALittleLamb(), 'duration': 8.0},
     ];
   }
 }
